@@ -25,7 +25,7 @@ class DataService {
 		const now = new Date()
 		const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59))
 		const minutes = Math.round((24 * 60) - ((today - now) / 1000 / 60))
-		const forecast = Math.round((currentBTCVolume / minutes) * 1140)
+		const forecast = Math.round((currentBTCVolume / minutes) * (24 * 60))
 		return {
 			now,
 			forecast,
