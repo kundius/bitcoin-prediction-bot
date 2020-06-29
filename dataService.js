@@ -40,7 +40,9 @@ class DataService {
 
 	getAllUids() {
 		const files = fs.readdirSync(path.join(process.env.USERS_PATH, 'users'))
-		return files.map(file => path.parse(file).name)
+		return files
+			.filter(file => path.parse(file).ext === '.json')
+			.map(file => path.parse(file).name)
 	}
 
 	getFilePath(uid) {
