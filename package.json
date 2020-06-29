@@ -6,6 +6,7 @@
   "dependencies": {
     "body-parser": "^1.19.0",
     "dotenv": "^8.2.0",
+    "express": "^4.17.1",
     "node-fetch": "^2.6.0",
     "telegraf": "^3.38.0",
     "telegraf-inline-menu": "^5.0.0-beta.9",
