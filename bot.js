@@ -147,4 +147,6 @@ bot.hears(/Интервал (.+)/, ({ match, reply, session, replyWithMarkdown }
 
 bot.hears(/(.*)/, ({ reply }) => reply('Не понимаю, о чем речь 😟'))
 
-bot.launch()
+// bot.launch()
+
+module.exports = bot
