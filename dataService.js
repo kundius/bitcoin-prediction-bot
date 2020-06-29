@@ -39,12 +39,12 @@ class DataService {
 	}
 
 	getAllUids() {
-		const files = fs.readdirSync(path.join('.', 'users'))
+		const files = fs.readdirSync(path.join(process.env.USERS_PATH, 'users'))
 		return files.map(file => path.parse(file).name)
 	}
 
 	getFilePath(uid) {
-		return path.join('.', 'users', `${uid}.json`)
+		return path.join(process.env.USERS_PATH, 'users', `${uid}.json`)
 	}
 
 	registerUser(ctx) {
