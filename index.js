@@ -43,17 +43,21 @@ bot.command('settings', ({ reply }) => {
 })
 
 bot.command('forecast', async ({ replyWithMarkdown }) => {
-  const {
-    now,
-    forecast,
-    currentBTCVolume
-  } = await dataService.calculateForecast()
-
-  replyWithMarkdown(
-    `Дата: *${now.toUTCString()}*\n` +
-    `Прогноз: *${forecast}* BTC\n` +
-    `Текущий объем: *${currentBTCVolume}* BTC`
-  )
+  const calculated = await dataService.calculateForecast()
+  if (calculated) {
+    const {
+      now,
+      forecast,
+      currentBTCVolume
+    } = calculated
+    replyWithMarkdown(
+      `Дата: *${now.toUTCString()}*\n` +
+      `Прогноз: *${forecast}* BTC\n` +
+      `Текущий объем: *${currentBTCVolume}* BTC`
+    )
+  } else {
+    replyWithMarkdown(`Прогноз не удался 😟`)
+  }
 })
 
 /* actions */
@@ -108,17 +112,21 @@ bot.hears(/(.*)/, ({ match, reply, session, replyWithMarkdown }, next) => {
 })
 
 bot.hears(/Прогноз/, async ({ replyWithMarkdown }) => {
-  const {
-    now,
-    forecast,
-    currentBTCVolume
-  } = await dataService.calculateForecast()
-
-  return replyWithMarkdown(
-    `Дата: *${now.toUTCString()}*\n` +
-    `Прогноз: *${forecast}* BTC\n` +
-    `Текущий объем: *${currentBTCVolume}* BTC`
-  )
+  const calculated = await dataService.calculateForecast()
+  if (calculated) {
+    const {
+      now,
+      forecast,
+      currentBTCVolume
+    } = calculated
+    replyWithMarkdown(
+      `Дата: *${now.toUTCString()}*\n` +
+      `Прогноз: *${forecast}* BTC\n` +
+      `Текущий объем: *${currentBTCVolume}* BTC`
+    )
+  } else {
+    replyWithMarkdown(`Прогноз не удался 😟`)
+  }
 })
 
 bot.hears(/Порог (.+)/, ({ match, reply, session, replyWithMarkdown }) => {

@@ -15,13 +15,20 @@ class DataService {
 		const day = pad(new Date().getUTCDate(), 2, '0')
 		const month = pad(new Date().getUTCMonth() + 1, 2, '0')
 		const url = `https://api.blockchair.com/bitcoin/blocks?a=date,sum(output_total)&q=time(2020-${month}-${day})`
-		const response = await fetch(url)
-		const body = await response.json()
-		return Math.round(body['data'][0]['sum(output_total)'] / 100000000)
+		try {
+			const response = await fetch(url)
+			const body = await response.json()
+			return Math.round(body['data'][0]['sum(output_total)'] / 100000000)
+		} catch {
+			return null
+		}
 	}
 	
 	calculateForecast = async () => {
 		const currentBTCVolume = await this.loadCurrentBTCVolume()
+		
+		if (!currentBTCVolume) return null
+		
 		const now = new Date()
 		const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59))
 		const minutes = Math.round((24 * 60) - ((today - now) / 1000 / 60))
@@ -30,6 +37,67 @@ class DataService {
 			now,
 			forecast,
 			currentBTCVolume
+		}
+	}
+
+	startForecasting = async uid => {
+		if (this.timers[uid]) {
+			clearTimeout(this.timers[uid])
+		}
+
+		const user = this.getUserData(uid)
+
+		if (user.threshold) {
+			const calculated = await this.calculateForecast()
+
+			if (calculated) {
+				const { forecast, currentBTCVolume } = calculated
+
+				user.latestForecast = forecast
+				user.currentBTCVolume = currentBTCVolume
+	
+				if (!user.forecastExceededNotifiedAt || user.forecastExceededNotifiedAt.getUTCDay() !== new Date().getUTCDay()) {
+					if (user.latestForecast > user.threshold) {
+						this.bot.telegram.sendMessage(
+							uid,
+							`Прогноз *${user.latestForecast}* превысил порог *${user.threshold}*`,
+							{
+								parse_mode: 'MarkdownV2'
+							}
+						)
+						user.forecastExceededNotifiedAt = new Date().toUTCString()
+					}
+				}
+		
+				if (!user.volumeExceededNotifiedAt || user.volumeExceededNotifiedAt.getUTCDay() !== new Date().getUTCDay()) {
+					if (user.currentBTCVolume > user.threshold) {
+						this.bot.telegram.sendMessage(
+							uid,
+							`Текущий объем *${user.currentBTCVolume}* превысил порог *${user.threshold}*`,
+							{
+								parse_mode: 'MarkdownV2'
+							}
+						)
+						user.volumeExceededNotifiedAt = new Date().toUTCString()
+					}
+				}
+		
+				this.updateUserData(uid, user)
+			} else {
+				this.bot.telegram.sendMessage(
+					uid,
+					`Прогноз не удался 😟`,
+					{
+						parse_mode: 'MarkdownV2'
+					}
+				)
+			}
+
+			if (user.interval) {
+				this.timers[uid] = setTimeout(() => {
+					this.startForecasting(uid)
+				}, user.interval * 60 * 1000)
+			}
 		}
 	}
 
@@ -104,55 +172,6 @@ class DataService {
 		user.volumeExceededNotifiedAt = null
 		this.updateUserData(uid, user)
 		this.startForecasting(uid)
-	}
-
-	startForecasting(uid) {
-		if (this.timers[uid]) {
-			clearTimeout(this.timers[uid])
-		}
-
-		const user = this.getUserData(uid)
-
-		if (user.threshold) {
-			this.calculateForecast().then(({ forecast, currentBTCVolume }) => {
-				user.latestForecast = forecast
-				user.currentBTCVolume = currentBTCVolume
-	
-				if (!user.forecastExceededNotifiedAt || user.forecastExceededNotifiedAt.getUTCDay() !== new Date().getUTCDay()) {
-					if (user.latestForecast > user.threshold) {
-						this.bot.telegram.sendMessage(
-							uid,
-							`Прогноз *${user.latestForecast}* превысил порог *${user.threshold}*`,
-							{
-								parse_mode: 'MarkdownV2'
-							}
-						)
-						user.forecastExceededNotifiedAt = new Date().toUTCString()
-					}
-				}
-		
-				if (!user.volumeExceededNotifiedAt || user.volumeExceededNotifiedAt.getUTCDay() !== new Date().getUTCDay()) {
-					if (user.currentBTCVolume > user.threshold) {
-						this.bot.telegram.sendMessage(
-							uid,
-							`Текущий объем *${user.currentBTCVolume}* превысил порог *${user.threshold}*`,
-							{
-								parse_mode: 'MarkdownV2'
-							}
-						)
-						user.volumeExceededNotifiedAt = new Date().toUTCString()
-					}
-				}
-		
-				this.updateUserData(uid, user)
-		
-				if (user.interval) {
-					this.timers[uid] = setTimeout(() => {
-						this.startForecasting(uid)
-					}, user.interval * 60 * 1000)
-				}
-			})
-		}
 	}
 }
 
